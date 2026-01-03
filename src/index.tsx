@@ -1,7 +1,10 @@
 import { Argv, Context, Random, Schema, Service, Session, Logger, h, Dict } from 'koishi'
 import { createRequire } from 'module'
+import { join } from 'path'
 
-const require = createRequire(import.meta.url)
+// 在 CommonJS 环境中，使用 __filename 或 __dirname
+// @ts-ignore - __filename 和 __dirname 在运行时可用
+const localRequire = createRequire(typeof __filename !== 'undefined' ? __filename : join(typeof __dirname !== 'undefined' ? __dirname : '.', 'index.js'))
 
 declare module 'koishi' {
   interface User {
@@ -25,8 +28,8 @@ class Eula extends Service {
     
     // 使用 createRequire 加载 YAML 本地化文件
     try {
-      ctx.i18n.define('zh', require('./locales/zh'))
-      ctx.i18n.define('en', require('./locales/en'))
+      ctx.i18n.define('zh', localRequire('./locales/zh'))
+      ctx.i18n.define('en', localRequire('./locales/en'))
     } catch (err) {
       this.log.error('Failed to load locales:', err)
     }
