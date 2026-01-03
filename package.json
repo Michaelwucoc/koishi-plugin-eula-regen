@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-eula-regen",
   "description": "EULA(End-user licence agreement) for your koishi bot.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "repository": "https://github.com/Lipraty/koishi-plugin-eula",
   "author": "Lipraty <i@lonay.me>",
   "main": "lib/index.js",
@@ -42,5 +42,8 @@
   ],
   "peerDependencies": {
     "koishi": "^4.12.0"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.1"
   }
 }

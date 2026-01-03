@@ -1,10 +1,21 @@
 import { Argv, Context, Random, Schema, Service, Session, Logger, h, Dict } from 'koishi'
-import { createRequire } from 'module'
-import { join } from 'path'
+import { readFileSync } from 'fs'
+import { join, dirname } from 'path'
 
-// 在 CommonJS 环境中，使用 __filename 或 __dirname
+// 获取当前文件所在目录
 // @ts-ignore - __filename 和 __dirname 在运行时可用
-const localRequire = createRequire(typeof __filename !== 'undefined' ? __filename : join(typeof __dirname !== 'undefined' ? __dirname : '.', 'index.js'))
+const getDirname = () => {
+  if (typeof __dirname !== 'undefined') {
+    return __dirname
+  } else if (typeof __filename !== 'undefined') {
+    return dirname(__filename)
+  } else {
+    // 回退到当前工作目录
+    return process.cwd()
+  }
+}
+
+const localesDir = join(getDirname(), 'locales')
 
 declare module 'koishi' {
   interface User {
@@ -26,10 +37,15 @@ class Eula extends Service {
     super(ctx, 'eula', true)
     this.log = ctx.logger('eula')
     
-    // 使用 createRequire 加载 YAML 本地化文件
+    // 加载 YAML 本地化文件
     try {
-      ctx.i18n.define('zh', localRequire('./locales/zh'))
-      ctx.i18n.define('en', localRequire('./locales/en'))
+      const yaml = require('js-yaml')
+      
+      // 使用 js-yaml 解析 YAML 文件
+      const zhContent = readFileSync(join(localesDir, 'zh.yaml'), 'utf8')
+      const enContent = readFileSync(join(localesDir, 'en.yaml'), 'utf8')
+      ctx.i18n.define('zh', yaml.load(zhContent))
+      ctx.i18n.define('en', yaml.load(enContent))
     } catch (err) {
       this.log.error('Failed to load locales:', err)
     }
