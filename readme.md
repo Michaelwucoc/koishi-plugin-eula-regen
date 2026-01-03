@@ -2,79 +2,175 @@
 
 [![npm](https://img.shields.io/npm/v/koishi-plugin-eula?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-eula) ![Rating](https://badge.koishi.chat/rating/koishi-plugin-eula)
 
-为你的 Koishi bot 添加一个 EULA(End-user licence agreement)
+为你的 Koishi bot 添加一个 EULA(End-user licence agreement) 最终用户许可协议。
 
-## 普通用户直接使用
+## 功能特性
 
-在插件市场中搜索 `eula` 点击添加即可。
+- ✅ 支持多语言协议内容配置
+- ✅ 可自定义协议别名和认可关键字
+- ✅ 支持命令白名单/黑名单模式
+- ✅ 提供完整的事件系统用于扩展
+- ✅ 支持权限等级控制
 
-## 开发扩展 eula 能力 (1.0+)
+## 快速开始
 
-首先需要添加 eula 开发模式依赖：
+### 普通用户使用
 
-``` shell
-# yarn:
+在 Koishi 插件市场中搜索 `eula`，点击添加即可使用。
 
-yarn add koishi-plugin-eula -d
+### 开发者使用
 
-# or use npm
+#### 安装
 
-npm i koishi-plugin-eula -d
+```bash
+# 使用 yarn
+yarn add koishi-plugin-eula
+
+# 或使用 npm
+npm install koishi-plugin-eula
 ```
 
-并且可以在 `package.json` 中加入如下 koishi 字段来声明 eula 依赖：
+#### 配置
 
-``` json
-//package.json
+在 `package.json` 中声明 eula 服务依赖：
 
-...
+```json
+{
   "koishi": {
-    ...,
     "service": {
-      "required": [..., "eula"]
-    },
-    ...
-  },
-...
+      "required": ["eula"]
+    }
+  }
+}
 ```
 
-然后，在您的插件中引入类型依赖来获得类型提示
+#### 在插件中使用
 
-以及添加 using 引用来让 koishi 正确的加载插件顺序：
+1. **引入类型定义**（获得 TypeScript 类型提示）：
 
-``` TypeScript
+```typescript
 import {} from 'koishi-plugin-eula'
 
-export const using = ['eula', ...]
+export const using = ['eula']
 ```
-最后，在您的插件中通过 `eula/update` 事件来获得 eula 状态，并根据状态自行调整：
 
-``` TypeScript
+2. **监听 EULA 更新事件**：
+
+```typescript
 ctx.on('eula/update', (session: Session, eula: boolean) => {
-    //more core
+  if (eula) {
+    // 用户已同意协议
+    console.log(`用户 ${session.userId} 已同意 EULA`)
+  } else {
+    // 用户未同意协议
+    console.log(`用户 ${session.userId} 未同意 EULA`)
+  }
 })
 ```
 
-经过如上方式便可在您的插件中使用 eula 流程，或者基于 eula 的认证能力扩展出更多的玩法。
+3. **在命令执行前检查**（可选）：
 
-## API
+```typescript
+ctx.before('command/execute', async (argv) => {
+  const session = argv.session
+  if (!session.user.eula) {
+    return '请先同意最终用户许可协议'
+  }
+})
+```
 
-### 服务：eula
+## API 文档
 
-#### `ctx.eula.vertify()`
+### 服务：`ctx.eula`
 
-> 一般情况下，更推荐使用 `eula/update` 事件来获得认证状态，这将得到完整 Session 支持
+#### `vertify(userId: number): Promise<boolean>`
 
-验证该用户是否同意过 `eula`
+验证指定用户是否已同意 EULA。
 
-- userId: `number` 用户 id，即 session.user.id
+> **注意**：一般情况下，更推荐使用 `eula/update` 事件来获得认证状态，这将得到完整的 Session 支持。
 
-### 扩展事件
+**参数：**
 
-事件：`eula/before`
+- `userId: number` - 用户 ID，即 `session.user.id`
 
-命令触发 eula 流程**前**发生该事件
+**返回值：**
 
-事件：`eula/update`
+- `Promise<boolean>` - `true` 表示用户已同意，`false` 表示未同意
 
-当用户回复 eula 后触发，这将传入一个 eula boolean 来告知用户同意与否
+**示例：**
+
+```typescript
+const hasAccepted = await ctx.eula.vertify(session.user.id)
+if (!hasAccepted) {
+  return '请先同意最终用户许可协议'
+}
+```
+
+### 事件系统
+
+#### 事件：`eula/before`
+
+在命令触发 EULA 流程**之前**触发该事件。
+
+**参数：**
+
+- `argv: Argv` - 命令参数对象
+
+**示例：**
+
+```typescript
+ctx.on('eula/before', (argv) => {
+  console.log(`用户 ${argv.session.userId} 即将看到 EULA`)
+})
+```
+
+#### 事件：`eula/update`
+
+当用户回复 EULA 后触发，用于通知用户同意或拒绝的状态。
+
+**参数：**
+
+- `session: Session` - 会话对象
+- `eula: boolean` - `true` 表示用户已同意，`false` 表示用户拒绝或超时
+
+**示例：**
+
+```typescript
+ctx.on('eula/update', (session, eula) => {
+  if (eula) {
+    // 用户同意协议后的处理逻辑
+    session.send('感谢您同意协议！')
+  } else {
+    // 用户拒绝协议后的处理逻辑
+    session.send('您已拒绝协议，部分功能将无法使用。')
+  }
+})
+```
+
+## 配置说明
+
+插件支持以下配置项：
+
+- **waitTime**: 等待用户回复的时长（秒），范围 30-300，默认 60
+- **replyAuthority**: 协议生效的最高权限等级，范围 1-5，默认 1
+- **forwardMessgae**: 是否合并发送协议和认可段（目前仅在 QQ 生效），默认 `true`
+- **alias**: 协议别名，默认 `'EULA'`
+- **content**: 协议内容的多语言设置（字典格式）
+- **accept**: 认可协议的关键字数组（如果有多个，将随机选择一个）
+- **enable**: 是否限制所有命令，默认 `true`
+- **model**: 限制命令的模式（`true` 为白名单，`false` 为黑名单）
+- **commands**: 指令列表（配合 `model` 使用）
+
+## 注意事项
+
+⚠️ **重要声明**
+
+本插件只用于体现 Koishi 部署者意志，即："部署者仅对同意了《最终用户协议》的最终用户提供服务"。
+
+对于部署者行为及所产生的任何纠纷，Koishi 及 koishi-plugin-eula 概不负责。
+
+协议内容文本可以在本地化文件中修改（`src/locales/` 目录下的 YAML 文件），因此你可以根据不同语言给予不同的协议文本。
+
+## 许可证
+
+MIT

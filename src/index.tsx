@@ -1,6 +1,7 @@
 import { Argv, Context, Random, Schema, Service, Session, Logger, h, Dict } from 'koishi'
-import { } from '@koishijs/plugin-help'
-import { } from '@koishijs/plugin-rate-limit'
+import { createRequire } from 'module'
+
+const require = createRequire(import.meta.url)
 
 declare module 'koishi' {
   interface User {
@@ -20,9 +21,15 @@ class Eula extends Service {
 
   constructor(ctx: Context, private configs: Eula.Config) {
     super(ctx, 'eula', true)
-    ctx.i18n.define('zh', require('./locales/zh'))
-    ctx.i18n.define('en', require('./locales/en'))
     this.log = ctx.logger('eula')
+    
+    // 使用 createRequire 加载 YAML 本地化文件
+    try {
+      ctx.i18n.define('zh', require('./locales/zh'))
+      ctx.i18n.define('en', require('./locales/en'))
+    } catch (err) {
+      this.log.error('Failed to load locales:', err)
+    }
 
     ctx.model.extend('user', {
       eula: { type: 'boolean', initial: false }
