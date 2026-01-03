@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-eula-regen",
   "description": "EULA(End-user licence agreement) for your koishi bot.",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "repository": "https://github.com/Lipraty/koishi-plugin-eula",
   "author": "Lipraty <i@lonay.me>",
   "main": "lib/index.js",
@@ -13,7 +13,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc && cp -r src/locales lib/ || true",
-    "postbuild": "node -e \"const fs=require('fs');const p='lib/index.js';let c=fs.readFileSync(p,'utf8');if(c.includes('require(\\\"@satorijs/element/jsx-runtime\\\")')){c=c.replace(/const jsx_runtime_1 = require\\(\"@satorijs\\\\/element\\\\/jsx-runtime\"\\);?/,'');c=c.replace(/('use strict';\\\\nObject\\\\.defineProperty\\(exports, '__esModule', \\\\{ value: true \\\\}\\);)/,'$1\\\\nlet jsx_runtime_1_promise = import(\\\"@satorijs/element/jsx-runtime\\\");\\\\nlet jsx_runtime_1;\\\\njsx_runtime_1_promise.then(mod=>{jsx_runtime_1=mod;});\\\\n');c=c.replace(/(async eula\\(argv\\) \\{)/,'$1\\\\nif(!jsx_runtime_1){jsx_runtime_1=await jsx_runtime_1_promise;}\\\\n');fs.writeFileSync(p,c);}\""
+    "postbuild": "node fix-jsx.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
